@@ -6,11 +6,16 @@ import {ERC20} from "openzeppelin/token/ERC20/ERC20.sol";
 import {Ownable} from "openzeppelin/access/Ownable.sol";
 
 abstract contract TaxHandler is ERC20, Ownable {
+    // fees receiver
     address public treasury;
+
+    // two decimal resolution
     uint256 public constant FEE_RATE_DENOMINATOR = 10000;
 
     uint256[3] public basisPointsFee;
-    mapping(address => bool) public isTaxWhitelisted;
+
+    // tax f
+    mapping(address => bool) public isFeeWhitelisted;
     mapping(address => bool) public isLiquidityPair;
 
     constructor(
@@ -25,7 +30,7 @@ abstract contract TaxHandler is ERC20, Ownable {
         basisPointsFee[0] = _transferFee;
         basisPointsFee[1] = _buyFee;
         basisPointsFee[2] = _sellFee;
-        isTaxWhitelisted[msg.sender] = true;
+        isFeeWhitelisted[msg.sender] = true;
     }
 
     // set treasury address
@@ -40,12 +45,12 @@ abstract contract TaxHandler is ERC20, Ownable {
 
     // add address to whitelist
     function addWhitelist(address _address) external onlyOwner {
-        isTaxWhitelisted[_address] = true;
+        isFeeWhitelisted[_address] = true;
     }
 
     // remove address from whitelist
     function removeWhitelist(address _address) external onlyOwner {
-        isTaxWhitelisted[_address] = false;
+        isFeeWhitelisted[_address] = false;
     }
 
     // add liquidity pair
@@ -59,18 +64,30 @@ abstract contract TaxHandler is ERC20, Ownable {
     }
 
     function getFeeRate(address from, address to) public view returns (uint256) {
-        if (!isTaxWhitelisted[from] && !isTaxWhitelisted[to]) {
-            return basisPointsFee[0];
-        } else {
+        // If either 'from' or 'to' is whitelisted, no tax is applied
+        if (isFeeWhitelisted[from] || isFeeWhitelisted[to]) {
             return 0;
         }
+
+        // If 'from' is a liquidity pair, apply buy tax (basisPointsFee[1])
+        if (isLiquidityPair[from]) {
+            return basisPointsFee[1];
+        }
+
+        // If 'to' is a liquidity pair, apply sell tax (basisPointsFee[2])
+        if (isLiquidityPair[to]) {
+            return basisPointsFee[2];
+        }
+
+        // If neither 'from' nor 'to' is a liquidity pair, apply transfer tax (basisPointsFee[0])
+        return basisPointsFee[0];
     }
 
     // transfer with tax
     function _transfer(address from, address to, uint256 amount) internal virtual override {
-        // if either sender or receiver is not whitelisted, apply tax
-        if (!isTaxWhitelisted[from] && !isTaxWhitelisted[to]) {
-            uint256 fee = (amount * basisPointsFee[0]) / FEE_RATE_DENOMINATOR;
+        uint256 feeRate = getFeeRate(from, to);
+        if (feeRate > 0) {
+            uint256 fee = (amount * feeRate) / FEE_RATE_DENOMINATOR;
             uint256 amountAfterFee = amount - fee;
             super._transfer(from, to, amountAfterFee);
             super._transfer(from, treasury, fee);
