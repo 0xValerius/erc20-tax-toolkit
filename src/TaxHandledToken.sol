@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import {TaxHandler} from "./TaxHandler.sol";
 
-contract MockToken is TaxHandler {
+contract TaxHandledToken is TaxHandler {
     constructor(
         string memory _symbol,
         string memory _name,

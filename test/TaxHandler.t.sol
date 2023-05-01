@@ -4,11 +4,11 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/StdUtils.sol";
-import {MockToken} from "../src/MockToken.sol";
+import {TaxHandledToken} from "../src/TaxHandledToken.sol";
 
-contract MockTokenTest is Test {
+contract TaxHandledTokenTest is Test {
     // state variable for the contract we want to test
-    MockToken token;
+    TaxHandledToken token;
 
     // state variables for the actors in the test
     address owner = makeAddr("ownenr");
@@ -27,7 +27,7 @@ contract MockTokenTest is Test {
     // Each test case uses a new/initial state each time based on actions here.
     function setUp() public {
         vm.startPrank(owner);
-        token = new MockToken('MockToken', 'MTK', treasury, transferFee, buyFee,
+        token = new TaxHandledToken('MockToken', 'MTK', treasury, transferFee, buyFee,
         sellFee);
         token.addWhitelist(treasury);
 

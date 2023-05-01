@@ -14,7 +14,6 @@ abstract contract TaxHandler is ERC20, Ownable {
 
     uint256[3] public basisPointsFee;
 
-    // tax f
     mapping(address => bool) public isFeeWhitelisted;
     mapping(address => bool) public isLiquidityPair;
 
