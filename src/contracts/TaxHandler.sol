@@ -17,14 +17,7 @@ abstract contract TaxHandler is ERC20, Ownable {
     mapping(address => bool) public isFeeWhitelisted;
     mapping(address => bool) public isLiquidityPair;
 
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        address _treasury,
-        uint256 _transferFee,
-        uint256 _buyFee,
-        uint256 _sellFee
-    ) ERC20(_name, _symbol) {
+    constructor(address _treasury, uint256 _transferFee, uint256 _buyFee, uint256 _sellFee) {
         treasury = _treasury;
         basisPointsFee[0] = _transferFee;
         basisPointsFee[1] = _buyFee;

@@ -16,7 +16,8 @@ abstract contract BlackLister is ERC20, Ownable {
         isBlacklisted[_address] = false;
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+        super._beforeTokenTransfer(from, to, amount);
         require(!isBlacklisted[from] && !isBlacklisted[to], "Blacklister: blacklisted address.");
     }
 }
