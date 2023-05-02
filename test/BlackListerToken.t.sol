@@ -20,9 +20,8 @@ contract BlackListerTokenTest is Test {
     // setUp() runs before every single test-case.
     // Each test case uses a new/initial state each time based on actions here.
     function setUp() public {
-        vm.startPrank(owner);
+        vm.prank(owner);
         token = new BlackListerToken("MockToken", "MTK");
-        vm.stopPrank();
 
         deal(address(token), owner, initialTokenActorBalance, true);
         deal(address(token), actor1, initialTokenActorBalance, true);
