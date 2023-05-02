@@ -38,4 +38,42 @@ contract BlackListerTokenTest is Test {
         assertEq(token.isBlacklisted(actor1), false);
         assertEq(token.isBlacklisted(actor2), false);
     }
+
+    function test_AddRemoveToBlacklist() public {
+        vm.prank(actor1);
+        vm.expectRevert("Ownable: caller is not the owner");
+        token.addToBlacklist(actor2);
+
+        vm.prank(owner);
+        token.addToBlacklist(actor2);
+        assertEq(token.isBlacklisted(actor2), true);
+
+        vm.prank(owner);
+        token.removeFromBlacklist(actor2);
+        assertEq(token.isBlacklisted(actor2), false);
+    }
+
+    function test_BlackListedTransfer() public {
+        // actor1 not blacklisted
+        vm.prank(actor1);
+        token.transfer(actor2, 100);
+        assertEq(token.balanceOf(actor1), initialTokenActorBalance - 100);
+        assertEq(token.balanceOf(actor2), initialTokenActorBalance + 100);
+
+        // actor1 blacklisted outbound
+        vm.prank(owner);
+        token.addToBlacklist(actor1);
+        vm.prank(actor1);
+        vm.expectRevert("Blacklister: blacklisted address.");
+        token.transfer(actor2, 100);
+        assertEq(token.balanceOf(actor1), initialTokenActorBalance - 100);
+        assertEq(token.balanceOf(actor2), initialTokenActorBalance + 100);
+
+        // actor1 blacklisted inbound
+        vm.prank(actor2);
+        vm.expectRevert("Blacklister: blacklisted address.");
+        token.transfer(actor1, 100);
+        assertEq(token.balanceOf(actor1), initialTokenActorBalance - 100);
+        assertEq(token.balanceOf(actor2), initialTokenActorBalance + 100);
+    }
 }
