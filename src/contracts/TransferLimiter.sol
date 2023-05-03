@@ -7,14 +7,13 @@ import {Ownable} from "openzeppelin/access/Ownable.sol";
 
 abstract contract TransferLimiter is ERC20, Ownable {
     uint256 public constant TRANSFER_LIMIT_DENOMINATOR = 10000;
-
     uint256 public basePointsTransferLimit;
+    mapping(address => bool) public isTransferLimitWhitelisted;
 
     constructor(uint256 _basePointsTranferLimit) {
         basePointsTransferLimit = _basePointsTranferLimit;
+        isTransferLimitWhitelisted[msg.sender] = true;
     }
-
-    mapping(address => bool) public isTransferLimitWhitelisted;
 
     function addTransferLimit(address _address) external onlyOwner {
         isTransferLimitWhitelisted[_address] = true;
