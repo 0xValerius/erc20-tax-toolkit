@@ -30,7 +30,7 @@ abstract contract BalanceLimiter is ERC20, Ownable {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
         if (!isBalanceLimitWhitelisted[from] && !isBalanceLimitWhitelisted[to]) {
-            require(amount <= allowedMaxBalance(), "TransferLimiter: transfer amount exceeds limit");
+            require(amount <= allowedMaxBalance(), "BalanceLimiter: balance amount exceeds limit");
         }
     }
 }
