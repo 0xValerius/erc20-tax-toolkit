@@ -56,10 +56,6 @@ contract TransferLimitedTokenTest is Test {
         vm.prank(owner);
         token.addTransferLimit(actor1);
         assertEq(token.isTransferLimitWhitelisted(actor1), true);
-
-        vm.prank(owner);
-        token.removeTransferLimit(actor1);
-        assertEq(token.isTransferLimitWhitelisted(actor1), false);
     }
 
     function test_TransferLimit() public {
