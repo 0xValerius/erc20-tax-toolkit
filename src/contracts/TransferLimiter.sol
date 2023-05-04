@@ -16,11 +16,11 @@ abstract contract TransferLimiter is ERC20, Ownable {
     }
 
     function addTransferLimit(address _address) external onlyOwner {
-        isTransferLimitWhitelisted[_address] = true;
+        isTransferLimitWhitelisted[_address] = false;
     }
 
     function removeTransferLimit(address _address) external onlyOwner {
-        isTransferLimitWhitelisted[_address] = false;
+        isTransferLimitWhitelisted[_address] = true;
     }
 
     function allowedAmount() public view returns (uint256) {

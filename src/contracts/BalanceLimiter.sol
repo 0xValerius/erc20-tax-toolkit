@@ -16,11 +16,11 @@ abstract contract BalanceLimiter is ERC20, Ownable {
     }
 
     function addBalanceLimit(address _address) external onlyOwner {
-        isBalanceLimitWhitelisted[_address] = true;
+        isBalanceLimitWhitelisted[_address] = false;
     }
 
     function removeBalanceLimit(address _address) external onlyOwner {
-        isBalanceLimitWhitelisted[_address] = false;
+        isBalanceLimitWhitelisted[_address] = true;
     }
 
     function allowedMaxBalance() public view returns (uint256) {
