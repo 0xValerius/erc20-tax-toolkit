@@ -35,24 +35,14 @@ abstract contract TaxHandler is ERC20, Ownable {
         basisPointsFee[_feeType] = _basisPoint;
     }
 
-    // add address to whitelist
-    function addWhitelist(address _address) external onlyOwner {
-        isFeeWhitelisted[_address] = true;
+    // manage fee whitelist
+    function feeWL(address _address, bool _status) external onlyOwner {
+        isFeeWhitelisted[_address] = _status;
     }
 
-    // remove address from whitelist
-    function removeWhitelist(address _address) external onlyOwner {
-        isFeeWhitelisted[_address] = false;
-    }
-
-    // add liquidity pair
-    function addLiquidityPair(address _address) external onlyOwner {
-        isLiquidityPair[_address] = true;
-    }
-
-    // remove liquidity pair
-    function removeLiquidityPair(address _address) external onlyOwner {
-        isLiquidityPair[_address] = false;
+    // manage liquidity pair
+    function liquidityPairList(address _address, bool _status) external onlyOwner {
+        isLiquidityPair[_address] = _status;
     }
 
     function getFeeRate(address from, address to) public view returns (uint256) {

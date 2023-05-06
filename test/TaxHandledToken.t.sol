@@ -29,10 +29,10 @@ contract TaxHandledTokenTest is Test {
         vm.startPrank(owner);
         token = new TaxHandledToken('MockToken', 'MTK', treasury, transferFee, buyFee,
         sellFee);
-        token.addWhitelist(treasury);
+        token.feeWL(treasury, true);
 
         // set liqiduity pair for buy / sell fees
-        token.addLiquidityPair(liquidityPair);
+        token.liquidityPairList(liquidityPair, true);
         vm.stopPrank();
 
         deal(address(token), owner, initialTokenActorBalance, true);
@@ -80,25 +80,26 @@ contract TaxHandledTokenTest is Test {
         // verify onlyOwner
         vm.prank(actor1);
         vm.expectRevert("Ownable: caller is not the owner");
-        token.addLiquidityPair(address(0x1234));
+        token.liquidityPairList(address(0x1234), true);
 
         vm.startPrank(owner);
-        token.addLiquidityPair(address(0x1234));
+        token.liquidityPairList(address(0x1234), true);
         assertEq(token.isLiquidityPair(address(0x1234)), true);
-        token.removeLiquidityPair(address(0x1234));
+        token.liquidityPairList(address(0x1234), false);
         vm.stopPrank();
+        assertEq(token.isLiquidityPair(address(0x1234)), false);
     }
 
     function test_AddRemoveWhitelist() public {
         // verify onlyOwner
         vm.prank(actor1);
         vm.expectRevert("Ownable: caller is not the owner");
-        token.addWhitelist(address(0x1234));
+        token.feeWL(address(0x1234), true);
 
         vm.startPrank(owner);
-        token.addWhitelist(address(0x1234));
+        token.feeWL(address(0x1234), true);
         assertEq(token.isFeeWhitelisted(address(0x1234)), true);
-        token.removeWhitelist(address(0x1234));
+        token.feeWL(address(0x1234), false);
         vm.stopPrank();
         assertEq(token.isFeeWhitelisted(address(0x1234)), false);
     }
