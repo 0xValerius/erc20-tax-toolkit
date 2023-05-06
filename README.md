@@ -32,9 +32,8 @@ The ERC20 Tax Toolkit is a set of modular, composable Solidity smart contracts t
 ## :rocket: Getting Started
 
 1. Clone this repository. `git clone https://github.com/0xValerius/erc20-tax-toolkig.git`
-2. Install the required dependencies. `npm install`
-3. Compile the smart contracts. `forge build`
-4. Run the test suite. `forge test`
+2. Compile the smart contracts. `forge build`
+3. Run the test suite. `forge test`
 
 ## 🤖 Usage
 
