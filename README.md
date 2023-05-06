@@ -4,7 +4,7 @@ The ERC20 Tax Toolkit is a set of modular, composable Solidity smart contracts t
 
 ## 📄 Contracts
 
-- **BalanceLimiter** it enforces a balance limit on an ERC20 token. This contract takes a base points balance limit during construction, which represents the percentage of the total supply that each account can hold.
+- **BalanceLimiter** it enforces a balance limit on an ERC20 token. This contract takes a base points balance limit during construction, which represents the percentage of the total supply that each account can hold.
 
 - **TransferLimiter** it enforces a transfer limit on an ERC20 token. This contract takes a base points transfer limit during construction, which represents the percentage of the total supply that each account can transfer in a single transaction.
 
