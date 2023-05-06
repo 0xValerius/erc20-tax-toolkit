@@ -44,5 +44,6 @@ To use the ERC20 Tax Toolkit, simply import the desired contract(s) from the tok
 
 [MIT](https://choosealicense.com/licenses/mit/)
 
-## 🚨 Disclaimer
+## 🚨 Disclaimer
+
 The ERC20 Tax Toolkit is provided "as is" and without warranties of any kind, whether express or implied. The user assumes all responsibility and risk for the use of this software.
