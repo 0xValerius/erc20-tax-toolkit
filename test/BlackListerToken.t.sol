@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/StdUtils.sol";
-import {BlackListerToken} from "../src/BlackListerToken.sol";
+import {BlackListerToken} from "../src/tokens/BlackListerToken.sol";
 
 contract BlackListerTokenTest is Test {
     // state variable for the contract we want to test

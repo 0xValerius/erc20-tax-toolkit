@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/StdUtils.sol";
-import {TaxHandledToken} from "../src/TaxHandledToken.sol";
+import {TaxHandledToken} from "../src/tokens/TaxHandledToken.sol";
 
 contract TaxHandledTokenTest is Test {
     // state variable for the contract we want to test

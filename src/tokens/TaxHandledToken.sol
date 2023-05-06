@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 import {ERC20} from "openzeppelin/token/ERC20/ERC20.sol";
-import {TaxHandler} from "./contracts/TaxHandler.sol";
+import {TaxHandler} from "../contracts/TaxHandler.sol";
 
 contract TaxHandledToken is ERC20, TaxHandler {
     constructor(

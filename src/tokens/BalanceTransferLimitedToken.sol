@@ -3,8 +3,8 @@
 pragma solidity ^0.8.17;
 
 import {ERC20} from "openzeppelin/token/ERC20/ERC20.sol";
-import {BalanceLimiter} from "./contracts/BalanceLimiter.sol";
-import {TransferLimiter} from "./contracts/TransferLimiter.sol";
+import {BalanceLimiter} from "../contracts/BalanceLimiter.sol";
+import {TransferLimiter} from "../contracts/TransferLimiter.sol";
 
 contract BalanceTransferLimitedToken is ERC20, BalanceLimiter, TransferLimiter {
     constructor(

@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/StdUtils.sol";
-import {BalanceLimitedToken} from "../src/BalanceLimitedToken.sol";
+import {BalanceLimitedToken} from "../src/tokens/BalanceLimitedToken.sol";
 
 contract BalanceLimitedTokenTest is Test {
     // state variable for the contract we want to test
