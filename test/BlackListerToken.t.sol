@@ -41,14 +41,14 @@ contract BlackListerTokenTest is Test {
     function test_AddRemoveToBlacklist() public {
         vm.prank(actor1);
         vm.expectRevert("Ownable: caller is not the owner");
-        token.addToBlacklist(actor2);
+        token.blacklist(actor2, true);
 
         vm.prank(owner);
-        token.addToBlacklist(actor2);
+        token.blacklist(actor2, true);
         assertEq(token.isBlacklisted(actor2), true);
 
         vm.prank(owner);
-        token.removeFromBlacklist(actor2);
+        token.blacklist(actor2, false);
         assertEq(token.isBlacklisted(actor2), false);
     }
 
@@ -61,7 +61,7 @@ contract BlackListerTokenTest is Test {
 
         // actor1 blacklisted outbound
         vm.prank(owner);
-        token.addToBlacklist(actor1);
+        token.blacklist(actor1, true);
         vm.prank(actor1);
         vm.expectRevert("Blacklister: blacklisted address.");
         token.transfer(actor2, 100);
