@@ -1,11 +1,25 @@
 // SPDX-License-Identifier: MIT
 
+/*
+
+      .oooo.               oooooo     oooo           oooo                      o8o                       
+     d8P'`Y8b               `888.     .8'            `888                      `"'                       
+    888    888 oooo    ooo   `888.   .8'    .oooo.    888   .ooooo.  oooo d8b oooo  oooo  oooo   .oooo.o 
+    888    888  `88b..8P'     `888. .8'    `P  )88b   888  d88' `88b `888""8P `888  `888  `888  d88(  "8 
+    888    888    Y888'        `888.8'      .oP"888   888  888ooo888  888      888   888   888  `"Y88b.  
+    `88b  d88'  .o8"'88b        `888'      d8(  888   888  888    .o  888      888   888   888  o.  )88b 
+     `Y8bd8P'  o88'   888o       `8'       `Y888""8o o888o `Y8bod8P' d888b    o888o  `V88V"V8P' 8""888P' 
+
+*/
+
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/StdUtils.sol";
 import {TaxHandledToken} from "../src/tokens/TaxHandledToken.sol";
 
+/// @title TaxHandledToken
+/// @notice A test suite for the TaxHandledToken smart contract
 contract TaxHandledTokenTest is Test {
     // state variable for the contract we want to test
     TaxHandledToken token;
@@ -23,8 +37,7 @@ contract TaxHandledTokenTest is Test {
 
     uint256 initialTokenActorBalance = 1 * 10 ** 18;
 
-    // setUp() runs before every single test-case.
-    // Each test case uses a new/initial state each time based on actions here.
+    /// @notice Sets up the initial state for each test case
     function setUp() public {
         vm.startPrank(owner);
         token = new TaxHandledToken('MockToken', 'MTK', treasury, transferFee, buyFee,
@@ -41,6 +54,7 @@ contract TaxHandledTokenTest is Test {
         deal(address(token), liquidityPair, initialTokenActorBalance, true);
     }
 
+    /// @notice Tests the constructor and initialization of the token contract
     function test_MockTokenDeploy() public {
         assertEq(token.name(), "MockToken");
         assertEq(token.symbol(), "MTK");
@@ -54,6 +68,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.isLiquidityPair(liquidityPair), true);
     }
 
+    /// @notice Tests setting the treasury address
     function test_setTreasury() public {
         // verify onlyOwner
         vm.prank(actor1);
@@ -65,6 +80,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.treasury(), address(0x1234));
     }
 
+    /// @notice Tests setting the fee rates
     function test_setFeeRate() public {
         // verify onlyOwner
         vm.prank(actor1);
@@ -76,6 +92,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.basisPointsFee(0), 200);
     }
 
+    /// @notice Tests adding and removing a liquidity pair
     function test_addRemoveLiquidityPair() public {
         // verify onlyOwner
         vm.prank(actor1);
@@ -90,6 +107,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.isLiquidityPair(address(0x1234)), false);
     }
 
+    /// @notice Tests adding and removing a fee whitelist
     function test_AddRemoveWhitelist() public {
         // verify onlyOwner
         vm.prank(actor1);
@@ -104,6 +122,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.isFeeWhitelisted(address(0x1234)), false);
     }
 
+    /// @notice Tests getting the fee rate for a given pair of addresses
     function test_getFeeRate() public {
         assertEq(token.getFeeRate(owner, actor1), 0);
         assertEq(token.getFeeRate(actor1, owner), 0);
@@ -112,6 +131,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.getFeeRate(actor1, liquidityPair), sellFee);
     }
 
+    /// @notice Tests the transfer function between whitelisted addresses
     function test_WhiteListedTransfer() public {
         // transfer from owner to actor1
         vm.prank(owner);
@@ -128,6 +148,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.balanceOf(treasury), 0);
     }
 
+    /// @notice Tests the transfer tax between non-whitelisted addresses
     function test_UserToUserTransfer() public {
         // transfer from actor1 to actor2
         vm.prank(actor1);
@@ -137,6 +158,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.balanceOf(treasury), 10);
     }
 
+    /// @notice Tests the buy tax
     function test_BuyTransfer() public {
         // actor1 buys
         vm.prank(liquidityPair);
@@ -153,6 +175,7 @@ contract TaxHandledTokenTest is Test {
         assertEq(token.balanceOf(treasury), 20);
     }
 
+    /// @notice Tests the sell tax
     function test_SellTransfer() public {
         // actor2 sells
         vm.prank(actor2);
