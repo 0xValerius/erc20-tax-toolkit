@@ -15,12 +15,8 @@ abstract contract BalanceLimiter is ERC20, Ownable {
         isBalanceLimitWhitelisted[msg.sender] = true;
     }
 
-    function addBalanceLimit(address _address) external onlyOwner {
-        isBalanceLimitWhitelisted[_address] = false;
-    }
-
-    function removeBalanceLimit(address _address) external onlyOwner {
-        isBalanceLimitWhitelisted[_address] = true;
+    function balanceLimitWL(address _address, bool _status) external onlyOwner {
+        isBalanceLimitWhitelisted[_address] = _status;
     }
 
     function allowedMaxBalance() public view returns (uint256) {

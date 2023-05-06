@@ -51,14 +51,14 @@ contract BalanceLimitedTokenTest is Test {
 
         vm.prank(actor1);
         vm.expectRevert("Ownable: caller is not the owner");
-        token.removeBalanceLimit(actor2);
+        token.balanceLimitWL(actor2, true);
 
         vm.prank(owner);
-        token.removeBalanceLimit(actor1);
+        token.balanceLimitWL(actor1, true);
         assertEq(token.isBalanceLimitWhitelisted(actor1), true);
 
         vm.prank(owner);
-        token.addBalanceLimit(actor1);
+        token.balanceLimitWL(actor1, false);
         assertEq(token.isBalanceLimitWhitelisted(actor1), false);
     }
 
@@ -75,7 +75,7 @@ contract BalanceLimitedTokenTest is Test {
         assertEq(token.balanceOf(actor2), 2 * initialTokenActorBalance);
 
         vm.prank(owner);
-        token.removeBalanceLimit(actor2);
+        token.balanceLimitWL(actor2, true);
 
         vm.prank(actor2);
         token.transfer(actor1, initialTokenActorBalance);
