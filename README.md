@@ -2,7 +2,7 @@
 
 The ERC20 Tax Toolkit is a set of modular, composable Solidity smart contracts that can be used to create custom ERC20 tokens with various features such as balance and transfer limiting, blacklisting, and tax handling.
 
-## 📄 Contracts
+## 📄 Contracts
 
 - **BalanceLimiter** it enforces a balance limit on an ERC20 token. This contract takes a base points balance limit during construction, which represents the percentage of the total supply that each account can hold.
 
@@ -36,7 +36,7 @@ The ERC20 Tax Toolkit is a set of modular, composable Solidity smart contracts t
 3. Compile the smart contracts. `forge build`
 4. Run the test suite. `forge test`
 
-## 🤖 Usage
+## 🤖 Usage
 
 To use the ERC20 Tax Toolkit, simply import the desired contract(s) from the tokens directory and inherit from them in your custom ERC20 token contract. You can also import the individual contracts for more fine-grained control.
 
