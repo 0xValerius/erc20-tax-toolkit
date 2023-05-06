@@ -51,10 +51,10 @@ contract TransferLimitedTokenTest is Test {
 
         vm.prank(actor1);
         vm.expectRevert("Ownable: caller is not the owner");
-        token.removeTransferLimit(actor2);
+        token.transferLimitWL(actor2, true);
 
         vm.prank(owner);
-        token.removeTransferLimit(actor1);
+        token.transferLimitWL(actor1, true);
         assertEq(token.isTransferLimitWhitelisted(actor1), true);
     }
 
@@ -71,7 +71,7 @@ contract TransferLimitedTokenTest is Test {
         assertEq(token.balanceOf(actor2), 2 * initialTokenActorBalance);
 
         vm.prank(owner);
-        token.removeTransferLimit(actor2);
+        token.transferLimitWL(actor2, true);
 
         vm.prank(actor2);
         token.transfer(actor1, initialTokenActorBalance);
