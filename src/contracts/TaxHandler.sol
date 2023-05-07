@@ -9,7 +9,6 @@
     888    888    Y888'        `888.8'      .oP"888   888  888ooo888  888      888   888   888  `"Y88b.  
     `88b  d88'  .o8"'88b        `888'      d8(  888   888  888    .o  888      888   888   888  o.  )88b 
      `Y8bd8P'  o88'   888o       `8'       `Y888""8o o888o `Y8bod8P' d888b    o888o  `V88V"V8P' 8""888P' 
-
 */
 
 pragma solidity ^0.8.17;
@@ -29,21 +28,77 @@ import {Ownable} from "openzeppelin/access/Ownable.sol";
  * tax handling functionality.
  */
 abstract contract TaxHandler is ERC20, Ownable {
-    address public treasury;
+    /**
+     * @notice OverMaxBasisPoints custom error.
+     */
+    error OverMaxBasisPoints();
 
-    uint256 public constant FEE_RATE_DENOMINATOR = 10000;
+    /**
+     * @notice Token configuration struct.
+     * @dev Struct packed into a slot, 28 bytes total.
+     *      Basis point fees fit uint16, max is 10_000.
+     * @custom:treasury Treasury address.
+     * @custom:transferFeesBPs Transfer fees basis points.
+     * @custom:buyFeesBPs Buy fees basis points.
+     * @custom:sellFeesBPs Sell fees basis points.
+     */
+    struct TokenConfiguration {
+        address treasury;
+        uint16 transferFeesBPs;
+        uint16 buyFeesBPs;
+        uint16 sellFeesBPs;
+    }
 
-    uint256[3] public basisPointsFee;
+    /**
+     * @notice Address configuration struct.
+     * @dev Struct packed into a slot, 2 bytes total.
+     * @custom:whitelisted Is address whitelisted.
+     * @custom:liquidityPair Is address liquidity pair.
+     */
+    struct AddressConfiguration {
+        bool whitelisted;
+        bool liquidityPair;
+    }
 
-    mapping(address => bool) public isFeeWhitelisted;
-    mapping(address => bool) public isLiquidityPair;
+    /**
+     * @notice Token configuration.
+     */
+    TokenConfiguration internal tokenConfiguration;
 
-    constructor(address _treasury, uint256 _transferFee, uint256 _buyFee, uint256 _sellFee) {
-        treasury = _treasury;
-        basisPointsFee[0] = _transferFee;
-        basisPointsFee[1] = _buyFee;
-        basisPointsFee[2] = _sellFee;
-        isFeeWhitelisted[msg.sender] = true;
+    /**
+     * @notice Address configuration.
+     * @dev Mapping from address to AddressConfiguration.
+     */
+    mapping(address => AddressConfiguration) internal addressConfiguration;
+
+    /**
+     * @notice Max amount of fees.
+     */
+    uint256 public constant MAX_FEES = 10_000;
+
+    /**
+     * @notice Fee rate denominator.
+     * @dev Denominator for computing basis point fees.
+     */
+    uint256 public constant FEE_RATE_DENOMINATOR = 10_000;
+
+    /**
+     * @notice Constructor.
+     * @dev Reverts with OverMaxBasisPoints when fees are greater than MAX_FEES.
+     */
+    constructor(address _treasury, uint16 _transferFee, uint16 _buyFee, uint16 _sellFee) {
+        if (_transferFee > MAX_FEES || _buyFee > MAX_FEES || _sellFee > MAX_FEES)  {
+            revert OverMaxBasisPoints();
+        }
+
+        tokenConfiguration = TokenConfiguration({
+            treasury: _treasury,
+            transferFeesBPs: _transferFee,
+            buyFeesBPs: _buyFee,
+            sellFeesBPs: _sellFee
+        });
+
+        addressConfiguration[msg.sender] = AddressConfiguration({whitelisted: true, liquidityPair: false});
     }
 
     /**
@@ -51,16 +106,43 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param _treasury The new treasury address.
      */
     function setTreasury(address _treasury) external onlyOwner {
-        treasury = _treasury;
+        tokenConfiguration.treasury = _treasury;
     }
 
     /**
-     * @notice Sets the fee rate for a specific fee type.
-     * @param _feeType The index of the fee type to update (0: transfer, 1: buy, 2: sell).
-     * @param _basisPoint The new basis point value for the fee type.
+     * @notice Sets the transfer fee rate.
+     * @dev Reverts with OverMaxBasisPoints when fees are greater than MAX_FEES.
+     * @param fees The new basis point value for the fee type.
      */
-    function setFees(uint256 _feeType, uint256 _basisPoint) external onlyOwner {
-        basisPointsFee[_feeType] = _basisPoint;
+    function setTransferFeesBPs(uint16 fees) external onlyOwner {
+        if (fees > MAX_FEES)  {
+            revert OverMaxBasisPoints();
+        }
+        tokenConfiguration.transferFeesBPs = fees;
+    }
+
+    /**
+     * @notice Sets the buy fee rate.
+     * @dev Reverts with OverMaxBasisPoints when fees are greater than MAX_FEES.
+     * @param fees The new basis point value for the fee type.
+     */
+    function setBuyFeesBPs(uint16 fees) external onlyOwner {
+        if (fees > MAX_FEES)  {
+            revert OverMaxBasisPoints();
+        }
+        tokenConfiguration.buyFeesBPs = fees;
+    }
+
+    /**
+     * @notice Sets the sell fee rate.
+     * @dev Reverts with OverMaxBasisPoints when fees are greater than MAX_FEES.
+     * @param fees The new basis point value for the fee type.
+     */
+    function setSellFeesBPs(uint16 fees) external onlyOwner {
+        if (fees > MAX_FEES)  {
+            revert OverMaxBasisPoints();
+        }
+        tokenConfiguration.sellFeesBPs = fees;
     }
 
     /**
@@ -69,7 +151,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param _status The new whitelist status (true: whitelisted, false: not whitelisted).
      */
     function feeWL(address _address, bool _status) external onlyOwner {
-        isFeeWhitelisted[_address] = _status;
+        addressConfiguration[_address].whitelisted = _status;
     }
 
     /**
@@ -78,7 +160,39 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param _status The new liquidity pair status (true: liquidity pair, false: not liquidity pair).
      */
     function liquidityPairList(address _address, bool _status) external onlyOwner {
-        isLiquidityPair[_address] = _status;
+        addressConfiguration[_address].liquidityPair = _status;
+    }
+
+    /**
+     * @notice Returns treasury address.
+     * @return Treasury address.
+     */
+    function treasury() public view returns (address) {
+        return tokenConfiguration.treasury;
+    }
+
+    /**
+     * @notice Returns transfer fees basis points.
+     * @return Transfer fees.
+     */
+    function transferFeesBPs() public view returns (uint256) {
+        return tokenConfiguration.transferFeesBPs;
+    }
+
+    /**
+     * @notice Returns buy fees basis points.
+     * @return Buy fees.
+     */
+    function buyFeesBPs() public view returns (uint256) {
+        return tokenConfiguration.buyFeesBPs;
+    }
+
+    /**
+     * @notice Returns sell fees basis points.
+     * @return Sell fees.
+     */
+    function sellFeesBPs() public view returns (uint256) {
+        return tokenConfiguration.sellFeesBPs;
     }
 
     /**
@@ -88,23 +202,46 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @return The fee rate for the transaction.
      */
     function getFeeRate(address from, address to) public view returns (uint256) {
+        AddressConfiguration memory fromConfiguration = addressConfiguration[from];
+        AddressConfiguration memory toConfiguration = addressConfiguration[to];
+
         // If either 'from' or 'to' is whitelisted, no tax is applied
-        if (isFeeWhitelisted[from] || isFeeWhitelisted[to]) {
+        if (fromConfiguration.whitelisted || toConfiguration.whitelisted) {
             return 0;
         }
 
-        // If 'from' is a liquidity pair, apply buy tax (basisPointsFee[1])
-        if (isLiquidityPair[from]) {
-            return basisPointsFee[1];
+        TokenConfiguration memory configuration = tokenConfiguration;
+
+        // If 'from' is a liquidity pair, apply buy tax
+        if (fromConfiguration.liquidityPair) {
+            return configuration.buyFeesBPs;
         }
 
-        // If 'to' is a liquidity pair, apply sell tax (basisPointsFee[2])
-        if (isLiquidityPair[to]) {
-            return basisPointsFee[2];
+        // If 'to' is a liquidity pair, apply sell tax
+        if (toConfiguration.liquidityPair) {
+            return configuration.sellFeesBPs;
         }
 
-        // If neither 'from' nor 'to' is a liquidity pair, apply transfer tax (basisPointsFee[0])
-        return basisPointsFee[0];
+        // Neither 'from' nor 'to' is a liquidity pair, apply transfer tax
+        return configuration.transferFeesBPs;
+    }
+
+    /**
+     * @notice Return whether account is whitelited.
+     * @param account Account address.
+     * @return Account whitelited.
+     */
+    function isFeeWhitelisted(address account) public view returns (bool) {
+        return addressConfiguration[account].whitelisted;
+    }
+
+    /**
+     * @notice Return whether account is liquidity pair.
+     * @param account Account address.
+     * @return Liquidity pair.
+     */
+    function isLiquidityPair(address account) public view returns (bool) {
+        return addressConfiguration[account].liquidityPair;
     }
 
     /**
@@ -114,14 +251,44 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param amount The amount to be transferred.
      */
     function _transfer(address from, address to, uint256 amount) internal virtual override {
-        uint256 feeRate = getFeeRate(from, to);
-        if (feeRate > 0) {
-            uint256 fee = (amount * feeRate) / FEE_RATE_DENOMINATOR;
-            uint256 amountAfterFee = amount - fee;
-            super._transfer(from, to, amountAfterFee);
-            super._transfer(from, treasury, fee);
-        } else {
+        AddressConfiguration memory fromConfiguration = addressConfiguration[from];
+        AddressConfiguration memory toConfiguration = addressConfiguration[to];
+
+        // If either 'from' or 'to' is whitelisted, no tax is applied
+        if (fromConfiguration.whitelisted || toConfiguration.whitelisted) {
             super._transfer(from, to, amount);
+            return;
         }
+
+        uint256 fee;
+        TokenConfiguration memory configuration = tokenConfiguration;
+
+        // If 'from' is a liquidity pair, apply buy tax
+        if (fromConfiguration.liquidityPair) {
+            unchecked {
+                fee = amount * configuration.buyFeesBPs / FEE_RATE_DENOMINATOR;
+            }
+        }
+        // If 'to' is a liquidity pair, apply sell tax
+        else if (toConfiguration.liquidityPair) {
+            unchecked {
+                fee = amount * configuration.sellFeesBPs / FEE_RATE_DENOMINATOR;
+            }
+        }
+        // Neither 'from' nor 'to' is a liquidity pair, apply transfer tax
+        else {
+            unchecked {
+                fee = amount * configuration.transferFeesBPs / FEE_RATE_DENOMINATOR;
+            }
+        }
+
+        // Cannot underflow since feeRate is max 100% of amount
+        uint256 amountAfterFee;
+        unchecked {
+            amountAfterFee = amount - fee;
+        }
+
+        super._transfer(from, to, amountAfterFee);
+        super._transfer(from, configuration.treasury, fee);
     }
 }
