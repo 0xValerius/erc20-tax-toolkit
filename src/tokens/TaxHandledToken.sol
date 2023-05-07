@@ -8,9 +8,7 @@
     888    888  `88b..8P'     `888. .8'    `P  )88b   888  d88' `88b `888""8P `888  `888  `888  d88(  "8 
     888    888    Y888'        `888.8'      .oP"888   888  888ooo888  888      888   888   888  `"Y88b.  
     `88b  d88'  .o8"'88b        `888'      d8(  888   888  888    .o  888      888   888   888  o.  )88b 
-     `Y8bd8P'  o88'   888o       `8'       `Y888""8o o888o `Y8bod8P' d888b    o888o  `V88V"V8P' 8""888P' 
-
-*/
+     `Y8bd8P'  o88'   888o       `8'       `Y888""8o o888o `Y8bod8P' d888b    o888o  `V88V"V8P' 8""888P' */
 
 pragma solidity ^0.8.17;
 
@@ -37,9 +35,9 @@ contract TaxHandledToken is ERC20, TaxHandler {
         string memory _name,
         string memory _symbol,
         address _treasury,
-        uint256 _transferFee,
-        uint256 _buyFee,
-        uint256 _sellFee
+        uint16 _transferFee,
+        uint16 _buyFee,
+        uint16 _sellFee
     ) ERC20(_name, _symbol) TaxHandler(_treasury, _transferFee, _buyFee, _sellFee) {}
 
     /**
