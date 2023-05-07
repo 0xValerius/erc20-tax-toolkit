@@ -8,8 +8,7 @@
     888    888  `88b..8P'     `888. .8'    `P  )88b   888  d88' `88b `888""8P `888  `888  `888  d88(  "8 
     888    888    Y888'        `888.8'      .oP"888   888  888ooo888  888      888   888   888  `"Y88b.  
     `88b  d88'  .o8"'88b        `888'      d8(  888   888  888    .o  888      888   888   888  o.  )88b 
-     `Y8bd8P'  o88'   888o       `8'       `Y888""8o o888o `Y8bod8P' d888b    o888o  `V88V"V8P' 8""888P' 
-*/
+     `Y8bd8P'  o88'   888o       `8'       `Y888""8o o888o `Y8bod8P' d888b    o888o  `V88V"V8P' 8""888P' */
 
 pragma solidity ^0.8.17;
 
@@ -87,7 +86,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @dev Reverts with OverMaxBasisPoints when fees are greater than MAX_FEES.
      */
     constructor(address _treasury, uint16 _transferFee, uint16 _buyFee, uint16 _sellFee) {
-        if (_transferFee > MAX_FEES || _buyFee > MAX_FEES || _sellFee > MAX_FEES)  {
+        if (_transferFee > MAX_FEES || _buyFee > MAX_FEES || _sellFee > MAX_FEES) {
             revert OverMaxBasisPoints();
         }
 
@@ -115,7 +114,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param fees The new basis point value for the fee type.
      */
     function setTransferFeesBPs(uint16 fees) external onlyOwner {
-        if (fees > MAX_FEES)  {
+        if (fees > MAX_FEES) {
             revert OverMaxBasisPoints();
         }
         tokenConfiguration.transferFeesBPs = fees;
@@ -127,7 +126,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param fees The new basis point value for the fee type.
      */
     function setBuyFeesBPs(uint16 fees) external onlyOwner {
-        if (fees > MAX_FEES)  {
+        if (fees > MAX_FEES) {
             revert OverMaxBasisPoints();
         }
         tokenConfiguration.buyFeesBPs = fees;
@@ -139,7 +138,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param fees The new basis point value for the fee type.
      */
     function setSellFeesBPs(uint16 fees) external onlyOwner {
-        if (fees > MAX_FEES)  {
+        if (fees > MAX_FEES) {
             revert OverMaxBasisPoints();
         }
         tokenConfiguration.sellFeesBPs = fees;
@@ -203,10 +202,16 @@ abstract contract TaxHandler is ERC20, Ownable {
      */
     function getFeeRate(address from, address to) public view returns (uint256) {
         AddressConfiguration memory fromConfiguration = addressConfiguration[from];
+
+        // If 'from' is whitelisted, no tax is applied
+        if (fromConfiguration.whitelisted) {
+            return 0;
+        }
+
         AddressConfiguration memory toConfiguration = addressConfiguration[to];
 
-        // If either 'from' or 'to' is whitelisted, no tax is applied
-        if (fromConfiguration.whitelisted || toConfiguration.whitelisted) {
+        // If 'to' is whitelisted, no tax is applied
+        if (toConfiguration.whitelisted) {
             return 0;
         }
 
@@ -252,10 +257,17 @@ abstract contract TaxHandler is ERC20, Ownable {
      */
     function _transfer(address from, address to, uint256 amount) internal virtual override {
         AddressConfiguration memory fromConfiguration = addressConfiguration[from];
+
+        // If 'from' is whitelisted, no tax is applied
+        if (fromConfiguration.whitelisted) {
+            super._transfer(from, to, amount);
+            return;
+        }
+
         AddressConfiguration memory toConfiguration = addressConfiguration[to];
 
-        // If either 'from' or 'to' is whitelisted, no tax is applied
-        if (fromConfiguration.whitelisted || toConfiguration.whitelisted) {
+        // If 'to' is whitelisted, no tax is applied
+        if (toConfiguration.whitelisted) {
             super._transfer(from, to, amount);
             return;
         }
