@@ -49,26 +49,18 @@ abstract contract TaxHandler is ERC20, Ownable {
     }
 
     /**
-     * @notice Address configuration struct.
-     * @dev Struct packed into a slot, 2 bytes total.
-     * @custom:whitelisted Is address whitelisted.
-     * @custom:liquidityPair Is address liquidity pair.
-     */
-    struct AddressConfiguration {
-        bool whitelisted;
-        bool liquidityPair;
-    }
-
-    /**
      * @notice Token configuration.
      */
     TokenConfiguration internal tokenConfiguration;
 
     /**
      * @notice Address configuration.
-     * @dev Mapping from address to AddressConfiguration.
+     * @dev Mapping from address to packed address configuration.  
+     *      Layout:
+     *        - [0,0] Whitelisted
+     *        - [1,1] Liquidity pair
      */
-    mapping(address => AddressConfiguration) internal addressConfiguration;
+    mapping(address => uint256) internal addressConfiguration;
 
     /**
      * @notice Max amount of fees.
@@ -97,7 +89,7 @@ abstract contract TaxHandler is ERC20, Ownable {
             sellFeesBPs: _sellFee
         });
 
-        addressConfiguration[msg.sender] = AddressConfiguration({whitelisted: true, liquidityPair: false});
+        addressConfiguration[msg.sender] = _packBoolean(0, 0, true);
     }
 
     /**
@@ -150,7 +142,8 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param _status The new whitelist status (true: whitelisted, false: not whitelisted).
      */
     function feeWL(address _address, bool _status) external onlyOwner {
-        addressConfiguration[_address].whitelisted = _status;
+        uint256 packed = addressConfiguration[_address];
+        addressConfiguration[_address] = _packBoolean(packed, 0, _status);
     }
 
     /**
@@ -159,7 +152,8 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param _status The new liquidity pair status (true: liquidity pair, false: not liquidity pair).
      */
     function liquidityPairList(address _address, bool _status) external onlyOwner {
-        addressConfiguration[_address].liquidityPair = _status;
+        uint256 packed = addressConfiguration[_address];
+        addressConfiguration[_address] = _packBoolean(packed, 1, _status);
     }
 
     /**
@@ -201,29 +195,29 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @return The fee rate for the transaction.
      */
     function getFeeRate(address from, address to) public view returns (uint256) {
-        AddressConfiguration memory fromConfiguration = addressConfiguration[from];
+        uint256 fromConfiguration = addressConfiguration[from];
 
         // If 'from' is whitelisted, no tax is applied
-        if (fromConfiguration.whitelisted) {
+        if (_unpackBoolean(fromConfiguration, 0)) {
             return 0;
         }
 
-        AddressConfiguration memory toConfiguration = addressConfiguration[to];
+        uint256 toConfiguration = addressConfiguration[to];
 
         // If 'to' is whitelisted, no tax is applied
-        if (toConfiguration.whitelisted) {
+        if (_unpackBoolean(toConfiguration, 0)) {
             return 0;
         }
 
         TokenConfiguration memory configuration = tokenConfiguration;
 
         // If 'from' is a liquidity pair, apply buy tax
-        if (fromConfiguration.liquidityPair) {
+        if (_unpackBoolean(fromConfiguration, 1)) {
             return configuration.buyFeesBPs;
         }
 
         // If 'to' is a liquidity pair, apply sell tax
-        if (toConfiguration.liquidityPair) {
+        if (_unpackBoolean(toConfiguration, 1)) {
             return configuration.sellFeesBPs;
         }
 
@@ -237,7 +231,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @return Account whitelited.
      */
     function isFeeWhitelisted(address account) public view returns (bool) {
-        return addressConfiguration[account].whitelisted;
+        return _unpackBoolean(addressConfiguration[account], 0);
     }
 
     /**
@@ -246,7 +240,7 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @return Liquidity pair.
      */
     function isLiquidityPair(address account) public view returns (bool) {
-        return addressConfiguration[account].liquidityPair;
+        return _unpackBoolean(addressConfiguration[account], 1);
     }
 
     /**
@@ -256,18 +250,18 @@ abstract contract TaxHandler is ERC20, Ownable {
      * @param amount The amount to be transferred.
      */
     function _transfer(address from, address to, uint256 amount) internal virtual override {
-        AddressConfiguration memory fromConfiguration = addressConfiguration[from];
+        uint256 fromConfiguration = addressConfiguration[from];
 
         // If 'from' is whitelisted, no tax is applied
-        if (fromConfiguration.whitelisted) {
+        if (_unpackBoolean(fromConfiguration, 0)) {
             super._transfer(from, to, amount);
             return;
         }
 
-        AddressConfiguration memory toConfiguration = addressConfiguration[to];
+        uint256 toConfiguration = addressConfiguration[to];
 
         // If 'to' is whitelisted, no tax is applied
-        if (toConfiguration.whitelisted) {
+        if (_unpackBoolean(toConfiguration, 0)) {
             super._transfer(from, to, amount);
             return;
         }
@@ -276,13 +270,13 @@ abstract contract TaxHandler is ERC20, Ownable {
         TokenConfiguration memory configuration = tokenConfiguration;
 
         // If 'from' is a liquidity pair, apply buy tax
-        if (fromConfiguration.liquidityPair) {
+        if (_unpackBoolean(fromConfiguration, 1)) {
             unchecked {
                 fee = amount * configuration.buyFeesBPs / FEE_RATE_DENOMINATOR;
             }
         }
         // If 'to' is a liquidity pair, apply sell tax
-        else if (toConfiguration.liquidityPair) {
+        else if (_unpackBoolean(toConfiguration, 1)) {
             unchecked {
                 fee = amount * configuration.sellFeesBPs / FEE_RATE_DENOMINATOR;
             }
@@ -302,5 +296,33 @@ abstract contract TaxHandler is ERC20, Ownable {
 
         super._transfer(from, to, amountAfterFee);
         super._transfer(from, configuration.treasury, fee);
+    }
+
+    /**
+     * @notice Set boolean value to source.
+     * @dev Internal helper packing boolean.
+     * @param source Packed source.
+     * @param index Offset.
+     * @param value Value to be set.
+     * @return uint256 Packed.
+     */
+    function _packBoolean(uint256 source, uint256 index, bool value) internal pure returns (uint256) {
+        if (value) {
+            return source | (1 << index);
+        } else {
+            return source & ~(1 << index);
+        }
+    }
+
+    /**
+     * @notice Get boolean value from packed source.
+     * @dev Internal helper unpacking booleans
+     * @param source Packed source.
+     * @param index Offset.
+     * @return bool Unpacked boolean.
+     */
+    function _unpackBoolean(uint256 source, uint256 index) internal pure returns (bool) {
+        // return (source >> index) & 1 == 1;
+        return source & (1 << index) > 0;
     }
 }
